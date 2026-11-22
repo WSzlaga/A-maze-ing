@@ -1,37 +1,41 @@
-from mazegen.generator import MazeGenerator, NORTH, WEST
+"""Main entry point for the A-Maze-ing maze generator application."""
+
+import sys
+from app.display import run_interactive_ui
+from app.exporter import export_maze
+from app.parser import parse_config
+from mazegen.generator import MazeGenerator
 
 
-def print_maze(grid: list[list[int]]) -> None:
-    """Rysuje labirynt w terminalu w prostym ASCII."""
-    width = len(grid[0])
+def main() -> None:
+    """Parse config, generate and export the maze, and launch the UI.
 
-    for row in grid:
-        # 1. Górne ściany (NORTH)
-        top = ""
-        for cell in row:
-            top += "+---" if (cell & NORTH) else "+   "
-        print(top + "+")
+    Returns:
+        None. Exits with status code 1 if arguments or config are invalid.
+    """
+    if len(sys.argv) != 2:
+        print("Usage: python3 a_maze_ing.py config.txt")
+        sys.exit(1)
 
-        # 2. Środek komórek + lewe ściany (WEST)
-        mid = ""
-        for cell in row:
-            wall = "|" if (cell & WEST) else " "
-            body = "###" if cell == 15 else "   "
-            mid += wall + body
-        print(mid + "|")
+    try:
+        cfg = parse_config(sys.argv[1])
 
-    # 3. Dolna krawędź całego labiryntu
-    print("+---" * width + "+")
+        maze = MazeGenerator(width=cfg.width, height=cfg.height)
+        maze.generate(start=cfg.entry, seed=cfg.seed, perfect=cfg.perfect)
+        path_str: str = maze.solve(cfg.entry, cfg.exit_pos)
+
+        export_maze(maze, cfg.entry, cfg.exit_pos, path_str, cfg.output_file)
+        run_interactive_ui(
+            maze=maze,
+            entry=cfg.entry,
+            exit_pos=cfg.exit_pos,
+            output_file=cfg.output_file,
+            perfect=cfg.perfect,
+        )
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    gen = MazeGenerator(width=5, height=5)
-    grid = gen.generate(start=(0, 0), seed=42)
-    print_maze(grid)
-
-    with open("test_maze.txt", "w", encoding="utf-8") as f:
-        for row in grid:
-            f.write("".join(format(cell, "x") for cell in row) + "\n")
-        f.write("\n0,0\n4,4\n")
-
-    print("Wygenerowano test_maze.txt!")
+    main()

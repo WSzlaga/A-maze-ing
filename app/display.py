@@ -4,6 +4,8 @@ import time
 from app.exporter import export_maze
 from mazegen.generator import EAST, MazeGenerator, NORTH, SOUTH, WEST
 
+Coord = tuple[int, int]
+
 RESET: str = "\033[0m"
 WALL_COLOR: str = "\033[1;97m"  # Bright white bold wall lines
 
@@ -47,6 +49,38 @@ CORNERS: dict[tuple[bool, bool, bool, bool], str] = {
     (False, True, True, True): "┳",
     (True, True, True, True): "╋",
 }
+
+
+def get_solution_coords(entry: Coord, path_str: str) -> list[Coord]:
+    """Convert a direction string ('NESW...') into a list of (x, y) coords.
+
+    Args:
+        entry: Starting (x, y) coordinate of the maze.
+        path_str: String of step directions ('N', 'E', 'S', 'W').
+
+    Returns:
+        Ordered list of (x, y) coordinates from entry to exit.
+    """
+    if not path_str or path_str == "exit unreachable":
+        return [entry]
+
+    x, y = entry
+    coords: list[Coord] = [(x, y)]
+    moves: dict[str, tuple[int, int]] = {
+        "N": (0, -1),
+        "E": (1, 0),
+        "S": (0, 1),
+        "W": (-1, 0),
+    }
+
+    for step in path_str:
+        if step in moves:
+            dx, dy = moves[step]
+            x += dx
+            y += dy
+            coords.append((x, y))
+
+    return coords
 
 
 def get_bg_code(x: int, y: int, palette: list[int]) -> str:
@@ -122,6 +156,10 @@ def get_corner(maze: MazeGenerator, vx: int, vy: int) -> str:
 
 def render_ascii(
     maze: MazeGenerator,
+    entry: Coord,
+    exit_pos: Coord,
+    solution_coords: list[Coord],
+    pattern_42: set[Coord],
     palette: list[int],
     pattern_style: str,
     show_path: bool = True,
@@ -132,8 +170,11 @@ def render_ascii(
     """Render the maze in ASCII with theme transitions and path animation.
 
     Args:
-        maze: MazeGenerator instance containing the grid, entry, exit,
-            pattern cells, and solution path.
+        maze: MazeGenerator instance containing the grid and dimensions.
+        entry: Entry (x, y) coordinate.
+        exit_pos: Exit (x, y) coordinate.
+        solution_coords: Ordered list of (x, y) coordinates for the path.
+        pattern_42: Set of (x, y) coordinates forming the "42" block.
         palette: Active list of 256-color ANSI background codes.
         pattern_style: ANSI escape sequence styling the solid "42" block.
         show_path: Whether to display the shortest path from entry to exit.
@@ -154,14 +195,13 @@ def render_ascii(
         return
 
     if not show_path:
-        path_set: set[tuple[int, int]] = set()
+        path_set: set[Coord] = set()
     elif path_limit is not None:
-        path_set = set(maze.solution_coords[:path_limit])
+        path_set = set(solution_coords[:path_limit])
     else:
-        path_set = set(maze.solution_coords)
+        path_set = set(solution_coords)
 
-    p42: set[tuple[int, int]] = maze.pattern_42_cells
-    steps: int = max(0, len(maze.solution_coords) - 1)
+    steps: int = max(0, len(solution_coords) - 1)
 
     lines: list[str] = [
         "\033[H"
@@ -171,7 +211,7 @@ def render_ascii(
         f"{STYLE_PATH}    {RESET} Path\n"
     ]
 
-    # Top border of the maze
+    # 1. Top border of the maze
     active_top: list[int] = (
         old_palette if (old_palette is not None and split_y == 0) else palette
     )
@@ -184,7 +224,7 @@ def render_ascii(
         top_line += paint_wall(horiz, bg) + paint_wall(corner, bg)
     lines.append(top_line)
 
-    # Cell rows
+    # 2. Cell rows
     for y in range(maze.height):
         row_palette: list[int] = (
             old_palette if (old_palette is not None and y >= split_y)
@@ -199,13 +239,13 @@ def render_ascii(
         for x in range(maze.width):
             cell: int = maze.grid[y][x]
             bg = get_bg_code(x, y, row_palette)
-            is_42: bool = (x, y) in p42
+            is_42: bool = (x, y) in pattern_42
             is_path: bool = (x, y) in path_set
 
             # Cell interior (2 characters wide)
-            if (x, y) == maze.entry:
+            if (x, y) == entry:
                 body: str = f"{STYLE_ENTRY}EN{RESET}"
-            elif (x, y) == maze.exit:
+            elif (x, y) == exit_pos:
                 body = f"{STYLE_EXIT}EX{RESET}"
             elif is_42:
                 body = f"{pattern_style}  {RESET}"
@@ -215,7 +255,7 @@ def render_ascii(
                 body = f"{bg}  {RESET}"
 
             # East wall / passage (merge adjacent "42" or open path cells)
-            if is_42 and (x + 1, y) in p42:
+            if is_42 and (x + 1, y) in pattern_42:
                 east_part: str = f"{pattern_style} {RESET}"
             elif not (cell & EAST) and is_path and (x + 1, y) in path_set:
                 east_part = f"{STYLE_PATH} {RESET}"
@@ -224,7 +264,7 @@ def render_ascii(
                 east_part = paint_wall(east_char, bg)
 
             # South wall / passage (merge adjacent "42" or open path cells)
-            if is_42 and (x, y + 1) in p42:
+            if is_42 and (x, y + 1) in pattern_42:
                 south_part: str = f"{pattern_style}  {RESET}"
             elif not (cell & SOUTH) and is_path and (x, y + 1) in path_set:
                 south_part = f"{STYLE_PATH}  {RESET}"
@@ -235,9 +275,9 @@ def render_ascii(
             # Bottom-right corner
             if (
                 is_42
-                and (x + 1, y) in p42
-                and (x, y + 1) in p42
-                and (x + 1, y + 1) in p42
+                and (x + 1, y) in pattern_42
+                and (x, y + 1) in pattern_42
+                and (x + 1, y + 1) in pattern_42
             ):
                 corner_part: str = f"{pattern_style} {RESET}"
             else:
@@ -253,12 +293,21 @@ def render_ascii(
     print("\n".join(lines))
 
 
-def run_interactive_ui(maze: MazeGenerator, output_file: str) -> None:
+def run_interactive_ui(
+    maze: MazeGenerator,
+    entry: Coord,
+    exit_pos: Coord,
+    output_file: str,
+    perfect: bool = False,
+) -> None:
     """Run the interactive terminal menu loop.
 
     Args:
         maze: MazeGenerator instance to display and regenerate on demand.
+        entry: Entry (x, y) coordinate.
+        exit_pos: Exit (x, y) coordinate.
         output_file: Destination file path for exporting regenerated mazes.
+        perfect: Whether regenerated mazes should be perfect (no loops).
 
     Returns:
         None. Runs until the user chooses to quit or interrupts execution.
@@ -266,6 +315,10 @@ def run_interactive_ui(maze: MazeGenerator, output_file: str) -> None:
     show_path: bool = True
     bg_idx: int = 0
     pat_idx: int = 0
+
+    pattern_42: set[Coord] = maze._get_42()
+    path_str: str = maze.solve(entry, exit_pos)
+    solution_coords: list[Coord] = get_solution_coords(entry, path_str)
 
     print("\033[H\033[J", end="")
 
@@ -275,6 +328,10 @@ def run_interactive_ui(maze: MazeGenerator, output_file: str) -> None:
 
         render_ascii(
             maze,
+            entry=entry,
+            exit_pos=exit_pos,
+            solution_coords=solution_coords,
+            pattern_42=pattern_42,
             palette=palette,
             pattern_style=pat_style,
             show_path=show_path,
@@ -294,15 +351,29 @@ def run_interactive_ui(maze: MazeGenerator, output_file: str) -> None:
             break
 
         if choice == "1":
-            maze.generate(seed=random.randint(0, 999999))
-            export_maze(maze, output_file)
+            # Reset grid walls to 15 before generating a fresh maze
+            maze.grid = [
+                [15 for _ in range(maze.width)] for _ in range(maze.height)
+            ]
+            maze.generate(
+                start=entry,
+                seed=random.randint(0, 999999),
+                perfect=perfect,
+            )
+            path_str = maze.solve(entry, exit_pos)
+            solution_coords = get_solution_coords(entry, path_str)
+            export_maze(maze, entry, exit_pos, path_str, output_file)
         elif choice == "2":
             show_path = not show_path
             if show_path:
                 # Animate shortest path step by step from EN to EX
-                for step in range(1, len(maze.solution_coords) + 1):
+                for step in range(1, len(solution_coords) + 1):
                     render_ascii(
                         maze,
+                        entry=entry,
+                        exit_pos=exit_pos,
+                        solution_coords=solution_coords,
+                        pattern_42=pattern_42,
                         palette=palette,
                         pattern_style=pat_style,
                         show_path=True,
@@ -318,6 +389,10 @@ def run_interactive_ui(maze: MazeGenerator, output_file: str) -> None:
             for step in range(1, maze.height + 1):
                 render_ascii(
                     maze,
+                    entry=entry,
+                    exit_pos=exit_pos,
+                    solution_coords=solution_coords,
+                    pattern_42=pattern_42,
                     palette=new_palette,
                     pattern_style=pat_style,
                     show_path=show_path,
