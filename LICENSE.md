@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 Wiktoria & Jagoda
+Copyright (c) 2026 Wiktoria Szlaga & Jagoda Bartoś
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
