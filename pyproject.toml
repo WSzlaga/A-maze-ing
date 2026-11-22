@@ -11,8 +11,8 @@ requires-python = ">=3.10"
 license = "MIT"
 
 authors = [
-	{ name = "jbartos", email = "jbartos@student.42.fr" },
-	{ name = "wszlaga", email = "wszlaga@student.42.fr" }
+	{ name = "jbartos", email = "jbartos@student.42.warsaw.pl" },
+	{ name = "wszlaga", email = "wszlaga@student.42.warsaw.pl" }
 ]
 dependencies = []
 
