@@ -124,7 +124,6 @@ class MazeGenerator:
         Set of (x, y) cells. Empty if the maze is too small.
         """
         if (self.width < 9 or self.height < 7):
-            print("Maze too small for 42 pattern")
             return set()
 
         pattern = [

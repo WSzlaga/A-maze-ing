@@ -317,6 +317,12 @@ def run_interactive_ui(
     pat_idx: int = 0
 
     pattern_42: set[Coord] = maze._get_42()
+    warning: str = ""
+    if not pattern_42:
+        warning = (
+            "Error: maze too small for the '42' pattern."
+            "You need at least 9x7."
+        )
     path_str: str = maze.solve(entry, exit_pos)
     solution_coords: list[Coord] = get_solution_coords(entry, path_str)
 
@@ -337,13 +343,15 @@ def run_interactive_ui(
             show_path=show_path,
         )
 
+        if warning:
+            print(warning)
         print("\n=== A-Maze-ing ===")
         print("1. Re-generate a new maze")
         print(f"2. Show/Hide shortest path ({'ON' if show_path else 'OFF'}) ")
         print(f"3. Change pastel background ({bg_name})   ")
         print(f"4. Change '42' pattern style ({pat_name})   ")
         print("5. Quit")
-
+        
         try:
             choice: str = input("Choice? (1-5): ").strip()
         except (KeyboardInterrupt, EOFError):
