@@ -434,22 +434,32 @@ modify and distribute the maze generator.
 
 | Member   | Login     | Responsibilities                                                                 |
 |----------|-----------|----------------------------------------------------------------------------------|
-| Jagoda Bartoś | `jbartos` | Terminal visualisation (`display.py`), interactive menu, colours and animations, <!-- TODO: add anything else you did (README, parser, exporter, packaging...) --> |
-| Wiktoria Szlaga | `wszlaga` | Maze generation algorithm (`generator.py`), solver, <!-- TODO: add anything else she did --> |
+| Witkoria Szlaga | `wszlaga` | Terminal visualisation (`display.py`), interactive menu, colours and animation, parsing and exporting, main file, README.md, LICENSE.md
+| Jagoda Bartoś | `jbartoś` | Maze generation algorithm (`generator.py`), solver, Makefile, edge cases and error handling
 
 ### Planning: anticipated vs. actual
 
-<!-- TODO: fill in with your own history. Suggested structure: -->
+**Initial plan.** We planned to split the work in two from the start: one of us
+would build the generation logic and the solver, the other would build the
+terminal visualisation, while the parser, the exporter and the packaging would
+be done together once the core worked. We expected to finish the mandatory part
+first, then use the remaining time for polishing, linting and the README.
 
 | Phase | Anticipated | What actually happened |
 |-------|-------------|------------------------|
-| Repository, skeleton and package setup | <!-- e.g. week 1 --> | <!-- ... --> |
-| Config parser and exporter | | |
-| Generator (DFS, 42 pattern) | | |
-| Non-perfect mode (dead-end removal) | | |
-| Solver (BFS) | | |
-| Terminal display and interactions | | |
-| Packaging (`mazegen` wheel), README, lint | | |
+| Repository and project skeleton | First days, done together | Took longer than expected: we had to learn how to structure the project, split `mazegen` from the application code and set up shared Git work. |
+| Config parser and exporter | Short task | Done as planned. Validation of edge cases (bounds, `ENTRY == EXIT`, missing keys) was extended later. |
+| Generator (DFS + "42" pattern) | About one week | Basic DFS worked quickly. The "42" pattern and the rule against 3x3 open areas required several fixes. |
+| Non-perfect mode | Simple extra step | Harder than expected. Removing dead-ends without creating 3x3 open areas needed extra checks, and it is still not fully guaranteed. |
+| Solver (BFS) | Short task | Done as planned. |
+| Terminal display and menu | Parallel to the generator | Grew beyond the minimum: colour themes, "42" colours and animations were added after the basic version worked. |
+| Packaging (`mazegen`), README, lint | Last days | Started late and compressed into the final days. Building the wheel and fixing `flake8` / `mypy` warnings took more time than planned. |
+
+**How the plan evolved.** The biggest changes were that the skeleton and the
+Git workflow took longer than planned, that the non-perfect mode needed more
+iterations than the perfect one, and that the packaging and the lint fixes were
+pushed to the end. Next time we would set up the package and the linters on the
+first day and run them continuously.
 
 ### What worked well
 
@@ -495,7 +505,6 @@ modify and distribute the maze generator.
 - **Python 3** with `venv` - development environment,
 - **flake8** and **mypy** - linting and static typing,
 - **build** and **setuptools** - building the `mazegen` package,
-- <!-- TODO: add editor, Canva/Notion/Trello, etc., if you used them -->
 
 ---
 
