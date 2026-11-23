@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 Coord = tuple[int, int]
+MAX_DIMENSION: int = 500
 
 
 @dataclass
@@ -85,6 +86,10 @@ def parse_config(filepath: str) -> MazeConfig:
     height: int = int(raw["HEIGHT"])
     if width <= 0 or height <= 0:
         raise ValueError("WIDTH and HEIGHT must be positive integers.")
+    if width > MAX_DIMENSION or height > MAX_DIMENSION:
+        raise ValueError(
+            f"WIDTH and HEIGHT cannot exceed {MAX_DIMENSION}."
+        )
 
     entry: Coord = parse_coord(raw["ENTRY"])
     exit_pos: Coord = parse_coord(raw["EXIT"])
