@@ -21,7 +21,12 @@ def main() -> None:
         cfg = parse_config(sys.argv[1])
 
         maze = MazeGenerator(width=cfg.width, height=cfg.height)
-        maze.generate(start=cfg.entry, exit_pos=cfg.exit_pos, seed=cfg.seed, perfect=cfg.perfect)
+        maze.generate(
+            start=cfg.entry,
+            exit_pos=cfg.exit_pos,
+            seed=cfg.seed,
+            perfect=cfg.perfect
+        )
         path_str: str = maze.solve(cfg.entry, cfg.exit_pos)
 
         export_maze(maze, cfg.entry, cfg.exit_pos, path_str, cfg.output_file)
@@ -34,11 +39,11 @@ def main() -> None:
         )
     except Exception as e:
         print(f"Error: {e}")
-        sys.exit(1) 
-# Added exception for keyboard interrupt, testing only, refine later.
+        sys.exit(1)
     except KeyboardInterrupt:
         print("\nAction interrupted by the user.")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
