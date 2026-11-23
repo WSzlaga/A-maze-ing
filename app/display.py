@@ -351,7 +351,7 @@ def run_interactive_ui(
         print(f"3. Change pastel background ({bg_name})   ")
         print(f"4. Change '42' pattern style ({pat_name})   ")
         print("5. Quit")
-        
+
         try:
             choice: str = input("Choice? (1-5): ").strip()
         except (KeyboardInterrupt, EOFError):
