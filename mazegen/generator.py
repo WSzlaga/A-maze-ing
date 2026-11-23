@@ -17,6 +17,8 @@ class MazeGenerator:
         self.height = height
         # siatka[height][width] wypełniona 15(wszystkie ściany zamknięte)
         self.grid = []
+        if width <= 0 or height <= 0:
+            raise ValueError("Width and height must be positive")
         for y in range(height):
             row = []
             for x in range(width):
@@ -154,7 +156,10 @@ class MazeGenerator:
                         break
 
     def generate(
-        self, start: Coord = (0, 0), seed: int | None = None,
+        self, 
+        start: Coord = (0, 0), 
+        exit_pos: Coord | None = None, 
+        seed: int | None = None,
         perfect: bool = False
     ) -> list[list[int]]:
         """Generuje perfect maze za pomocą iteracyjnego DFS."""
@@ -162,6 +167,23 @@ class MazeGenerator:
         blocked = self._get_42()
         if start in blocked:
             raise ValueError("Start inside 42 pattern!")
+        if exit_pos is not None and exit_pos in blocked:
+            raise ValueError("End inside 42 pattern!")
+        sx, sy = start
+        if not (0 <= sx < self.width and 0 <= sy < self.height):
+            raise ValueError("Start out of maze bounds!")
+        if exit_pos is not None:
+            ex, ey = exit_pos
+            if not (0 <= ex < self.width and 0 <= ey < self.height):
+                raise ValueError("Exit out of maze bounds!")
+            if start == exit_pos:
+                raise ValueError("Start and exit cannot be the same!")
+        self.grid = []
+        for y in range(self.height):
+            row = []
+            for x in range(self.width):
+                row.append(15)
+            self.grid.append(row)
         visited: set[Coord] = set(blocked)
         visited.add(start)
         stack: list[Coord] = [start]
@@ -219,21 +241,10 @@ class MazeGenerator:
         path.reverse()
         return ("".join(path))
 
-    # exitMaze()
-# Inicjalizuj stos, exitCell, entryCell, currentCell = entryCel;
-#     while currentCell != exitCell:
-#         oznacz currentCell jako odwiedzoną;
-#         wstaw na stos nieodwiedzonych sąsiadów currentCell:
-#         if stos = []
-#             return(0)
-#         else:
-#             zdejmij ze stosu komórkę, uczyń ją currentCell
-#     sukces
-
 
 if __name__ == "__main__":
-    gen = MazeGenerator(width=5, height=5)
-    grid = gen.generate(start=(0, 0), seed=42)
+    gen = MazeGenerator(width=20, height=20)
+    grid = gen.generate(start=(0, 0), exit_pos=(6,7), seed=42)
 
     with open("test_maze.txt", "w", encoding="utf-8") as f:
         for row in grid:

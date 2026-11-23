@@ -14,4 +14,5 @@ maze.txt
 test_maze.txt
 .vscode/
 .idea/
+maze_analyzer.py
 .DS_Store
