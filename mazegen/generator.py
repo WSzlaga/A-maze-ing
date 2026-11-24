@@ -134,7 +134,7 @@ class MazeGenerator:
             "..#.###",
         ]
 
-        offset_x = (self.width - 7) // 2
+        offset_x = self.width // 2 - 3
         offset_y = (self.height - 5) // 2
 
         cells: set[Coord] = set()
