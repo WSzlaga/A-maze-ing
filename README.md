@@ -154,9 +154,9 @@ Default `config.txt` (provided in the repository):
 
 ```ini
 WIDTH=20
-HEIGHT=20
+HEIGHT=15
 ENTRY=0,0
-EXIT=6,10
+EXIT=19,14
 OUTPUT_FILE=maze.txt
 PERFECT=False
 #SEED = 123
