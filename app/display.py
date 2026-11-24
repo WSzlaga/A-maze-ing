@@ -1,3 +1,5 @@
+"""Interactive terminal UI and ASCII renderer for A-Maze-ing."""
+
 import random
 import shutil
 import time
@@ -198,6 +200,7 @@ def render_ascii(
         None. Outputs the rendered maze directly to standard output.
     """
     def paint(char: str, bg_code: str) -> str:
+        """Paint a wall character with the currently selected wall colour."""
         return paint_wall(char, bg_code, wall_color)
 
     needed_cols: int = maze.width * 3 + 1

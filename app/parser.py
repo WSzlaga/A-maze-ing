@@ -29,10 +29,30 @@ class MazeConfig:
     seed: int | None = None
 
 
-def parse_coord(coord_str: str) -> Coord:
+def parse_int(key: str, value: str) -> int:
+    """Convert a config value to an integer with a readable error.
+
+    Args:
+        key: Name of the config key (used in the error message).
+        value: Raw string value from the config file.
+
+    Returns:
+        The parsed integer.
+
+    Raises:
+        ValueError: If the value is not a valid integer.
+    """
+    try:
+        return int(value)
+    except ValueError:
+        raise ValueError(f"{key} must be an integer, got '{value}'.") from None
+
+
+def parse_coord(key: str, coord_str: str) -> Coord:
     """Parse an 'x,y' coordinate string into a tuple of two integers.
 
     Args:
+        key: Name of the config key (used in the error message).
         coord_str: Coordinate string in 'x,y' format.
 
     Returns:
@@ -43,8 +63,10 @@ def parse_coord(coord_str: str) -> Coord:
     """
     parts: list[str] = coord_str.split(",")
     if len(parts) != 2:
-        raise ValueError(f"Invalid coordinate format: '{coord_str}'")
-    return (int(parts[0].strip()), int(parts[1].strip()))
+        raise ValueError(
+            f"{key} must be in 'x,y' format, got '{coord_str}'."
+        )
+    return (parse_int(key, parts[0].strip()), parse_int(key, parts[1].strip()))
 
 
 def parse_config(filepath: str) -> MazeConfig:
@@ -82,8 +104,8 @@ def parse_config(filepath: str) -> MazeConfig:
     if missing:
         raise ValueError(f"Missing required config keys: {', '.join(missing)}")
 
-    width: int = int(raw["WIDTH"])
-    height: int = int(raw["HEIGHT"])
+    width: int = parse_int("WIDTH", raw["WIDTH"])
+    height: int = parse_int("HEIGHT", raw["HEIGHT"])
     if width <= 0 or height <= 0:
         raise ValueError("WIDTH and HEIGHT must be positive integers.")
     if width > MAX_DIMENSION or height > MAX_DIMENSION:
@@ -91,8 +113,8 @@ def parse_config(filepath: str) -> MazeConfig:
             f"WIDTH and HEIGHT cannot exceed {MAX_DIMENSION}."
         )
 
-    entry: Coord = parse_coord(raw["ENTRY"])
-    exit_pos: Coord = parse_coord(raw["EXIT"])
+    entry: Coord = parse_coord("ENTRY", raw["ENTRY"])
+    exit_pos: Coord = parse_coord("EXIT", raw["EXIT"])
     if not (0 <= entry[0] < width and 0 <= entry[1] < height):
         raise ValueError("ENTRY coordinates are out of maze bounds.")
     if not (0 <= exit_pos[0] < width and 0 <= exit_pos[1] < height):
@@ -104,7 +126,9 @@ def parse_config(filepath: str) -> MazeConfig:
     if perfect_raw not in ("true", "false"):
         raise ValueError("PERFECT must be 'True' or 'False'.")
 
-    seed: int | None = int(raw["SEED"]) if "SEED" in raw else None
+    seed: int | None = None
+    if "SEED" in raw:
+        seed = parse_int("SEED", raw["SEED"])
 
     return MazeConfig(
         width=width,

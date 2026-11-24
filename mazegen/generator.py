@@ -3,9 +3,9 @@
 import random
 from collections import deque
 
-"""współrzędne ENTRY i EXIT w config.txt są w formacie (x, y)
-(kolumna, wiersz), ale
-w tablicy 2D w Pythonie indeksuje się zazwyczaj grid[y][x]
+"""
+Coordinates are (x, y) = (column, row), but the grid is indexed
+grid[y][x] (row first)
 """
 Coord = tuple[int, int]  # (x, y)
 
@@ -33,7 +33,7 @@ class MazeGenerator:
         """
         self.width = width
         self.height = height
-        # siatka[height][width] wypełniona 15(wszystkie ściany zamknięte)
+        # grid[height][width] filled with 15 (all walls closed)
         self.grid: list[list[int]] = []
         if width <= 0 or height <= 0:
             raise ValueError("Width and height must be positive")
@@ -44,7 +44,7 @@ class MazeGenerator:
             self.grid.append(row)
 
     def remove_wall(self, cell_a: Coord, cell_b: Coord) -> None:
-        """Open the wall between two nieghbor cells
+        """Open the wall between two neighbor cells
         Args: cell_a: First cell as (x, y)
         cell_b: Second cell as (dx, dy), next to cell_a
         """
@@ -53,16 +53,16 @@ class MazeGenerator:
         dx = x2 - x1
         dy = y2 - y1
 
-        if dx == 1 and dy == 0:      # cell_b jest na Wschód od cell_a
+        if dx == 1 and dy == 0:      # cell_b is to the East of cell_a
             self.grid[y1][x1] &= ~EAST
             self.grid[y2][x2] &= ~WEST
-        elif dx == -1 and dy == 0:   # cell_b jest na Zachód od cell_a
+        elif dx == -1 and dy == 0:   # cell_b is to the West of cell_a
             self.grid[y1][x1] &= ~WEST
             self.grid[y2][x2] &= ~EAST
-        elif dx == 0 and dy == 1:    # cell_b jest na Południe od cell_a
+        elif dx == 0 and dy == 1:    # cell_b is to the South of cell_a
             self.grid[y1][x1] &= ~SOUTH
             self.grid[y2][x2] &= ~NORTH
-        elif dx == 0 and dy == -1:   # cell_b jest na Północ od cell_a
+        elif dx == 0 and dy == -1:   # cell_b is to the North of cell_a
             self.grid[y1][x1] &= ~NORTH
             self.grid[y2][x2] &= ~SOUTH
 
@@ -73,23 +73,21 @@ class MazeGenerator:
         cell_a: First cell as (x, y).
         cell_b: Second cell as (x, y), next to cell_a
         """
-
-        # Dodawanie wspólnej ściany między sąsiednimi komórkami (x, y).
         x1, y1 = cell_a
         x2, y2 = cell_b
         dx = x2 - x1
         dy = y2 - y1
 
-        if dx == 1 and dy == 0:      # cell_b jest na Wschód od cell_a
+        if dx == 1 and dy == 0:       # cell_b is to the East of cell_a
             self.grid[y1][x1] |= EAST
             self.grid[y2][x2] |= WEST
-        elif dx == -1 and dy == 0:   # cell_b jest na Zachód od cell_a
+        elif dx == -1 and dy == 0:   # cell_b is to the West of cell_a
             self.grid[y1][x1] |= WEST
             self.grid[y2][x2] |= EAST
-        elif dx == 0 and dy == 1:    # cell_b jest na Południe od cell_a
+        elif dx == 0 and dy == 1:    # cell_b is to the South of cell_a
             self.grid[y1][x1] |= SOUTH
             self.grid[y2][x2] |= NORTH
-        elif dx == 0 and dy == -1:   # cell_b jest na Północ od cell_a
+        elif dx == 0 and dy == -1:   # cell_b is to the North of cell_a
             self.grid[y1][x1] |= NORTH
             self.grid[y2][x2] |= SOUTH
 
@@ -197,15 +195,14 @@ class MazeGenerator:
         """
         for y in range(self.height):
             for x in range(self.width):
-                # sprawdzenie czy komorka to slepy zaulek (3sciany zamkniete)
+                # dead-end = cell with exactly three closed walls
                 if (self.grid[y][x] not in (7, 11, 13, 14)):
                     continue
-                # szukanie legal sasiadow za zamknieta sciana
+                # closed walls facing a cell inside the grid, not part of "42"
                 candidates: list[Coord] = []
                 for dx, dy, wall_bit in directions:
                     nx = x + dx
                     ny = y + dy
-                    # czy jest sciana i czy w planszy i nie 42
                     if (
                         (self.grid[y][x] & wall_bit)
                         and 0 <= nx < self.width

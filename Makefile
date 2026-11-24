@@ -1,6 +1,6 @@
 PYTHON = python3
 
-.PHONY: install run debug build clean fclean lint
+.PHONY: install run debug build clean fclean lint lint-strict
 
 install:
 	$(PYTHON) -m pip install flake8 mypy build
@@ -15,7 +15,7 @@ build:
 	$(PYTHON) -m build
 
 clean:
-	rm -rf .mypy_cache
+	rm -rf .mypy_cache .pytest_cache
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 
 fclean: clean
@@ -25,3 +25,7 @@ fclean: clean
 lint:
 	$(PYTHON) -m flake8 .
 	$(PYTHON) -m mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
+
+lint-strict:
+	$(PYTHON) -m flake8 .
+	$(PYTHON) -m mypy . --strict

@@ -16,9 +16,10 @@ visualisation and a reusable, pip-installable generator package (`mazegen`).
 5. [Maze generation algorithm](#maze-generation-algorithm)
 6. [Visual representation and interactions](#visual-representation-and-interactions)
 7. [Reusable module: `mazegen`](#reusable-module-mazegen)
-8. [Project structure](#project-structure)
-9. [Team and project management](#team-and-project-management)
-10. [Resources](#resources)
+8. [Verifying the output](#verifying-the-output)
+9. [Project structure](#project-structure)
+10. [Team and project management](#team-and-project-management)
+11. [Resources](#resources)
 
 ---
 
@@ -37,7 +38,7 @@ encoding, and displays the maze in the terminal with colours and animations.
 - Support two modes selected by the `PERFECT` flag:
   - `PERFECT=True` - a *perfect* maze (exactly one path between any two cells),
   - `PERFECT=False` - a maze with loops (dead-ends are removed where possible),
-    closer to a board usable by a Pac-Man-like game.
+    usable as a board for a Pac-Man-like game.
 - Draw a visible **"42"** made of fully closed cells in the middle of the maze.
 - Isolate the generation logic in a standalone class (`MazeGenerator`) packaged
   as `mazegen-1.0.0-py3-none-any.whl` so it can be reused in future projects.
@@ -67,7 +68,7 @@ encoding, and displays the maze in the terminal with colours and animations.
 
 - Python **3.10 or newer** (the code uses `X | None` type syntax).
 - No runtime dependencies (standard library only).
-- Development tools: `flake8` and `mypy`.
+- Development tools: `flake8`, `mypy` and `build`.
 - A terminal with 256-colour and Unicode support, at least `3 * WIDTH + 1`
   columns wide (see [Visual representation](#visual-representation-and-interactions)).
 
@@ -94,15 +95,16 @@ Any other number of arguments prints the usage message and exits with code 1.
 
 ### Makefile targets
 
-| Target         | What it does                                                                 |
-|----------------|------------------------------------------------------------------------------|
-| `make install` | Installs `flake8`, `mypy` and `build`.                                       |
-| `make run`     | Runs `python3 a_maze_ing.py config.txt`.                                     |
-| `make debug`   | Runs the program under `pdb`.                                                |
-| `make build`   | Builds the `mazegen` package (`.tar.gz` and `.whl`) into `dist/`.            |
-| `make clean`   | Removes `.mypy_cache`, `.pytest_cache` and all `__pycache__` directories.    |
-| `make fclean`  | Runs `clean`, then removes `build/`, `dist/`, `*.egg-info` and `maze.txt`.   |
-| `make lint`    | Runs `flake8 .` and `mypy .` with the flags required by the subject.         |
+| Target             | What it does                                                                |
+|--------------------|-----------------------------------------------------------------------------|
+| `make install`     | Installs `flake8`, `mypy` and `build`.                                      |
+| `make run`         | Runs `python3 a_maze_ing.py config.txt`.                                    |
+| `make debug`       | Runs the program under `pdb`.                                               |
+| `make build`       | Builds the `mazegen` package (`.tar.gz` and `.whl`) into `dist/`.           |
+| `make clean`       | Removes `.mypy_cache`, `.pytest_cache` and all `__pycache__` directories.   |
+| `make fclean`      | Runs `clean`, then removes `build/`, `dist/`, `*.egg-info` and `maze.txt`.  |
+| `make lint`        | Runs `flake8 .` and `mypy .` with the flags required by the subject.        |
+| `make lint-strict` | Runs `flake8 .` and `mypy . --strict`.                                      |
 
 ### Building the `mazegen` package from source
 
@@ -127,7 +129,8 @@ pip install mazegen-1.0.0.tar.gz
 
 The program never crashes with a traceback on bad input. Invalid
 configuration, missing file, bad syntax, out-of-range values or impossible
-parameters produce a one-line message (`Error: ...`) and exit code 1.
+parameters produce a one-line message (`Error: ...`) and exit code 1. Messages
+name the faulty key, e.g. `Error: WIDTH must be an integer, got 'abc'.`
 `Ctrl+C` and `Ctrl+D` are handled as well.
 
 ---
@@ -137,23 +140,28 @@ parameters produce a one-line message (`Error: ...`) and exit code 1.
 One `KEY=VALUE` pair per line. Keys are case-insensitive, whitespace around
 `=` is ignored, empty lines and lines starting with `#` are ignored.
 
-| Key           | Required | Type / format        | Description                                         | Example            |
-|---------------|----------|----------------------|-----------------------------------------------------|--------------------|
-| `WIDTH`       | yes      | integer, 1 - 500     | Number of columns (cells).                          | `WIDTH=20`         |
-| `HEIGHT`      | yes      | integer, 1 - 500     | Number of rows (cells).                             | `HEIGHT=15`        |
-| `ENTRY`       | yes      | `x,y`                | Entry cell, `x` = column, `y` = row, origin top-left.| `ENTRY=0,0`        |
-| `EXIT`        | yes      | `x,y`                | Exit cell, must differ from `ENTRY`.                | `EXIT=19,14`       |
-| `OUTPUT_FILE` | yes      | path                 | File the maze is written to.                        | `OUTPUT_FILE=maze.txt` |
-| `PERFECT`     | yes      | `True` / `False`     | Perfect maze (single path) or maze with loops.      | `PERFECT=True`     |
-| `SEED`        | no       | integer              | Seed for reproducible generation. Random if absent. | `SEED=123`         |
+| Key           | Required | Type / format        | Description                                          | Example                |
+|---------------|----------|----------------------|------------------------------------------------------|------------------------|
+| `WIDTH`       | yes      | integer, 1 - 500     | Number of columns (cells).                           | `WIDTH=20`             |
+| `HEIGHT`      | yes      | integer, 1 - 500     | Number of rows (cells).                              | `HEIGHT=15`            |
+| `ENTRY`       | yes      | `x,y`                | Entry cell, `x` = column, `y` = row, origin top-left.| `ENTRY=0,0`            |
+| `EXIT`        | yes      | `x,y`                | Exit cell, must differ from `ENTRY`.                 | `EXIT=19,14`           |
+| `OUTPUT_FILE` | yes      | path                 | File the maze is written to.                         | `OUTPUT_FILE=maze.txt` |
+| `PERFECT`     | yes      | `True` / `False`     | Perfect maze (single path) or maze with loops.       | `PERFECT=True`         |
+| `SEED`        | no       | integer              | Seed for reproducible generation. Random if absent.  | `SEED=123`             |
 
 Validation performed by the parser:
 
 - all mandatory keys must be present,
+- every `KEY=VALUE` line must contain `=`,
+- `WIDTH`, `HEIGHT` and `SEED` must be integers,
 - `WIDTH` and `HEIGHT` must be positive and not exceed 500,
-- `ENTRY` and `EXIT` must be inside the maze and must be different,
+- `ENTRY` and `EXIT` must have the `x,y` format, be inside the maze and be
+  different,
 - `PERFECT` must be `True` or `False` (case-insensitive),
 - `ENTRY` and `EXIT` must not lie inside the "42" pattern (checked by the generator).
+
+Unknown keys are ignored. If a key appears twice, the last value wins.
 
 Default `config.txt` (provided in the repository):
 
@@ -174,12 +182,12 @@ PERFECT=False
 Each cell is written as **one hexadecimal digit** (uppercase). A bit set to `1`
 means the wall is **closed**, `0` means it is **open**.
 
-| Bit | Value | Direction |
-|-----|-------|-----------|
-| 0 (LSB) | 1 | North |
-| 1       | 2 | East  |
-| 2       | 4 | South |
-| 3       | 8 | West  |
+| Bit     | Value | Direction |
+|---------|-------|-----------|
+| 0 (LSB) | 1     | North     |
+| 1       | 2     | East      |
+| 2       | 4     | South     |
+| 3       | 8     | West      |
 
 ```
         N (1)
@@ -246,10 +254,17 @@ reachable, there are no loops, hence exactly one path between entry and exit
 After the DFS, `remove_dead_ends()` scans the grid. For every cell with three
 closed walls (values `7`, `11`, `13`, `14`) it tries, in random order, to open
 the wall towards a neighbour that is inside the grid and is not a "42" cell.
-After each attempt `has_open_3x3()` checks whether a forbidden 3x3 open area
+After each attempt `has_open_3x3_near()` checks (only the at most nine 3x3
+windows containing the changed cells) whether a forbidden 3x3 open area
 appeared; if so the wall is restored and the next neighbour is tried. This
-introduces loops and removes most dead-ends while respecting the "no 3x3
-open area" rule.
+introduces loops and removes dead-ends while respecting the "no 3x3 open area"
+rule.
+
+The removal is a single pass and has no formal guarantee. In our checks with
+the provided `maze_analyzer.py` (see [Verifying the output](#verifying-the-output))
+mazes of size 9x7 and larger had no real dead-end, all corners and the centre
+reachable, and several independent routes. Very small mazes (e.g. 2x2, 4x4)
+may not have enough room for two independent loops.
 
 ### Shortest path: Breadth-First Search
 
@@ -269,8 +284,8 @@ back to the entry. BFS guarantees the **shortest** path in an unweighted grid.
   keep them closed and isolated.
 - **Reproducible** - a dedicated `random.Random(seed)` instance is used, so the
   same seed and parameters always give the same maze.
-- **Natural base for loops** - starting from a spanning tree, opening a few
-  walls is a straightforward way to build the non-perfect mode.
+- **Natural base for loops** - starting from a spanning tree, opening the walls
+  of dead-ends is a straightforward way to build the non-perfect mode.
 
 ### The "42" pattern
 
@@ -285,7 +300,9 @@ A 7x5 block of fully closed cells is drawn at the centre of the maze:
 ```
 
 The pattern requires `WIDTH >= 9` and `HEIGHT >= 7`. On smaller mazes it is
-omitted and the message `Maze too small for 42 pattern` is printed.
+omitted and the message
+`Error: maze too small for the '42' pattern (need at least 9x7).`
+is printed under the menu.
 
 ---
 
@@ -294,14 +311,14 @@ omitted and the message `Maze too small for 42 pattern` is printed.
 The maze is rendered in the **terminal** using Unicode box-drawing characters
 (heavy lines) and 256-colour ANSI backgrounds.
 
-| Element        | Rendering                                           |
-|----------------|-----------------------------------------------------|
-| Walls          | bold white box-drawing characters                   |
-| Background     | pastel diagonal gradient (4 selectable palettes)    |
-| Entry          | green cell labelled `EN`                            |
-| Exit           | red cell labelled `EX`                              |
-| Shortest path  | continuous neon pink corridor                       |
-| "42" pattern   | solid neon block (4 selectable colours)             |
+| Element       | Rendering                                             |
+|---------------|-------------------------------------------------------|
+| Walls         | bold box-drawing characters (5 selectable colours)    |
+| Background    | pastel diagonal gradient (4 selectable palettes)      |
+| Entry         | green cell labelled `EN`                              |
+| Exit          | red cell labelled `EX`                                |
+| Shortest path | continuous neon pink corridor                         |
+| "42" pattern  | solid neon block (4 selectable colours, cyan default) |
 
 The header shows the maze size and the number of steps of the shortest path.
 Each cell uses 3 terminal columns, so the terminal must be at least
@@ -314,19 +331,21 @@ to be.
 === A-Maze-ing ===
 1. Re-generate a new maze
 2. Show/Hide shortest path (ON)
-3. Change pastel background (Pastel Rainbow)
-4. Change '42' pattern style (Neon Pink)
-5. Quit
-Choice? (1-5):
+3. Change wall colour (Black)
+4. Change pastel background (Pastel Rainbow)
+5. Change '42' pattern style (Electric Cyan)
+6. Quit
+Choice? (1-6):
 ```
 
-| Choice | Action                                                                                         |
-|--------|------------------------------------------------------------------------------------------------|
-| 1      | Generates a new maze with a new random seed, solves it, re-exports it to `OUTPUT_FILE`.        |
-| 2      | Toggles the shortest path; when shown, it is animated step by step from entry to exit.         |
-| 3      | Cycles through the pastel palettes with a row-by-row wipe animation.                           |
-| 4      | Cycles through the colours of the "42" pattern.                                                |
-| 5      | Quits (`Ctrl+C` / `Ctrl+D` also exit cleanly).                                                 |
+| Choice | Action                                                                                  |
+|--------|-----------------------------------------------------------------------------------------|
+| 1      | Generates a new maze with a new random seed, solves it, re-exports it to `OUTPUT_FILE`. |
+| 2      | Toggles the shortest path; when shown, it is animated step by step from entry to exit.  |
+| 3      | Cycles through the wall colours (Black, White, Navy, Purple, Dark Red).                 |
+| 4      | Cycles through the pastel palettes with a row-by-row wipe animation.                    |
+| 5      | Cycles through the colours of the "42" pattern.                                         |
+| 6      | Quits (`Ctrl+C` / `Ctrl+D` also exit cleanly).                                          |
 
 ---
 
@@ -363,13 +382,13 @@ print(maze.grid[0][0]) # wall bitmask of the top-left cell
 
 ### Custom parameters
 
-| Parameter         | Where                  | Meaning                                                        |
-|-------------------|------------------------|----------------------------------------------------------------|
-| `width`, `height` | `MazeGenerator(...)`   | Size of the maze, positive integers.                           |
-| `start`           | `generate(...)`        | Cell where the DFS starts, `(x, y)`. Default `(0, 0)`.         |
-| `exit_pos`        | `generate(...)`        | Optional, used to validate the exit (in bounds, not in "42").  |
-| `seed`            | `generate(...)`        | Integer for reproducible mazes. `None` = random.               |
-| `perfect`         | `generate(...)`        | `True` = single path, `False` = remove dead-ends (loops).      |
+| Parameter         | Where                | Meaning                                                       |
+|-------------------|----------------------|---------------------------------------------------------------|
+| `width`, `height` | `MazeGenerator(...)` | Size of the maze, positive integers.                          |
+| `start`           | `generate(...)`      | Cell where the DFS starts, `(x, y)`. Default `(0, 0)`.        |
+| `exit_pos`        | `generate(...)`      | Optional, used to validate the exit (in bounds, not in "42"). |
+| `seed`            | `generate(...)`      | Integer for reproducible mazes. `None` = random.              |
+| `perfect`         | `generate(...)`      | `True` = single path, `False` = remove dead-ends (loops).     |
 
 The same `seed` with the same parameters always produces the same maze.
 
@@ -388,18 +407,34 @@ The same `seed` with the same parameters always produces the same maze.
 - `maze.solve(entry, exit_pos)` - shortest path as a string of `N`, `E`, `S`, `W`
   (or `"exit unreachable"`).
 - `maze.width`, `maze.height` - dimensions.
+- `maze.get_42_cells()` - set of `(x, y)` cells forming the "42" (empty if the
+  maze is too small).
 - `maze.remove_wall(a, b)` / `maze.add_wall(a, b)` - edit the shared wall of two
   neighbouring cells, keeping both cells coherent.
 - `maze.has_open_3x3()` - `True` if the maze contains a forbidden 3x3 open area.
 
 ### What is reusable and how
 
-| Part                          | Reusable? | Notes                                                           |
-|-------------------------------|-----------|-----------------------------------------------------------------|
-| `mazegen.MazeGenerator`       | **Yes**   | Standalone, standard library only. Packaged as a wheel.         |
-| `app/parser.py`               | Partly    | Config parser; easy to adapt to other `KEY=VALUE` formats.      |
-| `app/exporter.py`             | Partly    | Writes the subject's hexadecimal format.                        |
-| `app/display.py`              | Partly    | Terminal renderer; depends on `MazeGenerator.grid` only.        |
+| Part                    | Reusable? | Notes                                                       |
+|-------------------------|-----------|-------------------------------------------------------------|
+| `mazegen.MazeGenerator` | **Yes**   | Standalone, standard library only. Packaged as a wheel.     |
+| `app/parser.py`         | Partly    | Config parser; easy to adapt to other `KEY=VALUE` formats.  |
+| `app/exporter.py`       | Partly    | Writes the subject's hexadecimal format.                    |
+| `app/display.py`        | Partly    | Terminal renderer; depends on `MazeGenerator.grid` only.    |
+
+---
+
+## Verifying the output
+
+The subject provides `maze_analyzer.py` (not part of this repository). It
+checks that every shared wall is encoded identically by both neighbours and
+reports whether the maze is *perfect* or a *Pac-Man-usable* board:
+
+```bash
+python3 maze_analyzer.py maze.txt                    # PERFECT=True  -> "PERFECT maze"
+python3 maze_analyzer.py maze.txt                    # PERFECT=False -> "Pac-Man-USABLE"
+python3 maze_analyzer.py maze.txt --max-dead-ends 0  # no real dead-end allowed
+```
 
 ---
 
@@ -416,6 +451,7 @@ The same `seed` with the same parameters always produces the same maze.
 ├── LICENSE.md                      # MIT license
 ├── README.md
 ├── .gitignore
+├── .flake8
 ├── app/
 │   ├── __init__.py
 │   ├── parser.py                   # config parsing and validation
@@ -438,10 +474,10 @@ modify and distribute the maze generator.
 
 ### Roles
 
-| Member   | Login     | Responsibilities                                                                 |
-|----------|-----------|----------------------------------------------------------------------------------|
-| Witkoria Szlaga | `wszlaga` | Terminal visualisation (`display.py`), interactive menu, colours and animation, parsing and exporting, main file, README.md, LICENSE.md
-| Jagoda Bartoś | `jbartoś` | Maze generation algorithm (`generator.py`), solver, Makefile, edge cases and error handling
+| Member           | Login     | Responsibilities                                                                                                      |
+|------------------|-----------|-----------------------------------------------------------------------------------------------------------------------|
+| Wiktoria Szlaga  | `wszlaga` | Terminal visualisation (`display.py`), interactive menu, colours and animation, parsing and exporting, main file, README.md, LICENSE.md |
+| Jagoda Bartoś    | `jbartos` | Maze generation algorithm (`generator.py`), solver, Makefile, edge cases and error handling                           |
 
 ### Planning: anticipated vs. actual
 
@@ -454,11 +490,11 @@ first, then use the remaining time for polishing, linting and the README.
 | Phase | Anticipated | What actually happened |
 |-------|-------------|------------------------|
 | Repository and project skeleton | First days, done together | Took longer than expected: we had to learn how to structure the project, split `mazegen` from the application code and set up shared Git work. |
-| Config parser and exporter | Short task | Done as planned. Validation of edge cases (bounds, `ENTRY == EXIT`, missing keys) was extended later. |
+| Config parser and exporter | Short task | Done as planned. Validation of edge cases (bounds, `ENTRY == EXIT`, missing keys, readable per-key messages) was extended later. |
 | Generator (DFS + "42" pattern) | About one week | Basic DFS worked quickly. The "42" pattern and the rule against 3x3 open areas required several fixes. |
-| Non-perfect mode | Simple extra step | Harder than expected. Removing dead-ends without creating 3x3 open areas needed extra checks, and it is still not fully guaranteed. |
+| Non-perfect mode | Simple extra step | Harder than expected. Removing dead-ends without creating 3x3 open areas needed extra checks. |
 | Solver (BFS) | Short task | Done as planned. |
-| Terminal display and menu | Parallel to the generator | Grew beyond the minimum: colour themes, "42" colours and animations were added after the basic version worked. |
+| Terminal display and menu | Parallel to the generator | Grew beyond the minimum: colour themes for walls, background and "42", and animations were added after the basic version worked. |
 | Packaging (`mazegen`), README, lint | Last days | Started late and compressed into the final days. Building the wheel and fixing `flake8` / `mypy` warnings took more time than planned. |
 
 **How the plan evolved.** The biggest changes were that the skeleton and the
@@ -485,16 +521,18 @@ first day and run them continuously.
   project.
 - **Interactive display.** Animations (path drawing, palette wipe) and several
   colour themes made the maze easy to inspect and to debug visually.
+- **The provided analyzer.** Running `maze_analyzer.py` on many seeds and sizes
+  showed quickly whether both modes behave as required.
 
 ### What could be improved
 
-- **Non-perfect mode guarantees.** Dead-end removal is a single pass, so a few
-  dead-ends can remain, and we do not explicitly guarantee open corners and
-  centre or at least two independent loops. A dedicated "braiding" step would
-  fix this.
-- **Automated tests.** We tested mostly by hand. Unit tests (pytest) for the
-  parser, the generator (wall coherence, no 3x3 open area, connectivity) and
-  the solver would have caught bugs earlier.
+- **Formal guarantees in non-perfect mode.** Dead-end removal is a single pass
+  without a proof that no dead-end remains; we rely on testing. A dedicated
+  "braiding" step with an explicit check would make it a guarantee, also for
+  very small mazes.
+- **Automated tests.** We tested mostly by hand and with the analyzer. Unit
+  tests (pytest) for the parser, the generator (wall coherence, no 3x3 open
+  area, connectivity) and the solver would have caught bugs earlier.
 - **Git workflow.** We could have used feature branches and pull requests
   instead of working directly on the main branch, which would have reduced
   merge conflicts.
@@ -502,8 +540,6 @@ first day and run them continuously.
   of at the end, would have saved time.
 - **More features.** Supporting several generation algorithms (e.g. Prim,
   Kruskal) and animating the generation itself.
-- **Code quality.** More consistent docstrings and type hints in the generator
-  module, and keeping lines within the flake8 limit from the start.
 
 ### Tools used
 
@@ -511,6 +547,7 @@ first day and run them continuously.
 - **Python 3** with `venv` - development environment,
 - **flake8** and **mypy** - linting and static typing,
 - **build** and **setuptools** - building the `mazegen` package,
+- **maze_analyzer.py** (provided with the subject) - checking the output files.
 
 ---
 
@@ -525,14 +562,24 @@ first day and run them continuously.
 - Python documentation - `random`, `dataclasses`, `typing`: <https://docs.python.org/3/>
 - Python Packaging User Guide (building wheels): <https://packaging.python.org/>
 - PEP 8 / flake8: <https://peps.python.org/pep-0008/>, <https://flake8.pycqa.org/>
+- PEP 257 (docstrings): <https://peps.python.org/pep-0257/>
 - mypy documentation: <https://mypy.readthedocs.io/>
 - Box Drawing Unicode block: <https://en.wikipedia.org/wiki/Box-drawing_characters>
 - ANSI escape codes (256 colours): <https://en.wikipedia.org/wiki/ANSI_escape_code>
 
 ### Use of AI
 
-AI tools were used strictly as a learning and review assistant during the project:
-Explaining algorithmic concepts (bitmask wall encoding, iterative DFS vs. recursion, BFS queue and parent backtracking) and Python typing syntax (int | None, tuple[int, int]).
-Assisting with debugging edge cases (coordinate ordering (x, y) vs. grid[y][x], infinite loops in BFS, flake8/mypy errors).
-Helping structure docstrings and drafting/translating the README.md according to the subject checklist.
-All code was reviewed, tested, and verified by the team members to ensure full understanding of every component.
+AI tools were used as a learning and review assistant during the project:
+
+- **Concepts:** explaining the bitmask wall encoding, iterative DFS vs.
+  recursion, BFS with parent backtracking, and Python typing syntax
+  (`int | None`, `tuple[int, int]`).
+- **Debugging:** helping with edge cases (coordinate order `(x, y)` vs.
+  `grid[y][x]`, infinite loops in BFS, `flake8` / `mypy` errors).
+- **Documentation:** helping structure docstrings and draft / translate the
+  README according to the subject checklist.
+- **Review:** checking the project against the subject and the evaluation
+  sheet (missing docstrings, stale README, stale package files).
+
+All code was reviewed, tested and verified by the team members to ensure full
+understanding of every component.

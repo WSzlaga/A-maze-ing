@@ -1,3 +1,5 @@
+"""Writer of the maze output file (hexadecimal wall encoding)."""
+
 from mazegen.generator import MazeGenerator
 
 Coord = tuple[int, int]
