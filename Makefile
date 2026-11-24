@@ -1,15 +1,18 @@
 PYTHON = python3
 
-.PHONY: install run debug clean lint
+.PHONY: install run debug build clean fclean lint
 
 install:
-	$(PYTHON) -m pip install flake8 mypy
+	$(PYTHON) -m pip install flake8 mypy build
 
 run:
 	$(PYTHON) a_maze_ing.py config.txt
 
 debug:
 	$(PYTHON) -m pdb a_maze_ing.py config.txt
+
+build:
+	$(PYTHON) -m build
 
 clean:
 	rm -rf .mypy_cache
