@@ -29,22 +29,25 @@ class MazeGenerator:
         height: Number of rows (must be positive).
 
         Raises:
-        ValueError: If wodth or height is not positive.
+        ValueError: If width or height is not positive.
         """
         self.width = width
         self.height = height
         # siatka[height][width] wypełniona 15(wszystkie ściany zamknięte)
-        self.grid = []
+        self.grid: list[list[int]] = []
         if width <= 0 or height <= 0:
             raise ValueError("Width and height must be positive")
         for y in range(height):
-            row = []
+            row: list[int] = []
             for x in range(width):
                 row.append(15)
             self.grid.append(row)
 
     def remove_wall(self, cell_a: Coord, cell_b: Coord) -> None:
-        # Burzenie wspólnej ściany między sąsiednimi komórkami (x, y).
+        """Open the wall between two nieghbor cells
+        Args: cell_a: First cell as (x, y)
+        cell_b: Second cell as (dx, dy), next to cell_a
+        """
         x1, y1 = cell_a
         x2, y2 = cell_b
         dx = x2 - x1
@@ -117,9 +120,6 @@ class MazeGenerator:
 
     def _get_42(self) -> set[Coord]:
         """Return the cells that draw the "42" in the middle of the maze.
-        Args:
-        warn: If True, print a message when the maze is too small.
-
         Returns:
         Set of (x, y) cells. Empty if the maze is too small.
         """
@@ -165,6 +165,8 @@ class MazeGenerator:
         return True
 
     def has_open_3x3(self) -> bool:
+        """Check the whole maze for a 3x3 open area
+        Returns: True if any 3x3 open area exists."""
         for sy in range(self.height - 2):
             for sx in range(self.width - 2):
                 if self.is_open_3x3(sx, sy):
@@ -188,7 +190,11 @@ class MazeGenerator:
             (0, 1, SOUTH),
             (-1, 0, WEST),
         ]
-
+        """Remove dead-ends by opening one extra wall for
+        each of them. A wall is kept closed if opening
+         it would make a 3x3 open area
+         Args: rng: random generator used to pick the wall
+        """
         for y in range(self.height):
             for x in range(self.width):
                 # sprawdzenie czy komorka to slepy zaulek (3sciany zamkniete)
