@@ -15,6 +15,10 @@ clean:
 	rm -rf .mypy_cache
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 
+fclean: clean
+	rm -rf build dist *.egg-info mazegen.egg-info
+	rm -f maze.txt
+
 lint:
 	$(PYTHON) -m flake8 .
 	$(PYTHON) -m mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs

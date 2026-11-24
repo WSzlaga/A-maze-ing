@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,6 +9,7 @@ description = "A-Maze-ing generator package for the 42 Common Core"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
+license-files = ["LICENSE.md"]
 
 authors = [
 	{ name = "jbartos", email = "jbartos@student.42.warsaw.pl" },
@@ -18,3 +19,6 @@ dependencies = []
 
 [tool.setuptools.packages.find]
 include = ["mazegen*"]
+
+[tool.mypy]
+exclude = ["maze_analyzer\\.py", "build", "dist"]

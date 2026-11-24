@@ -78,7 +78,7 @@ It is recommended to work inside a virtual environment:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-make install        # pip install flake8 mypy
+make install        # pip install flake8 mypy build
 ```
 
 ### Running
@@ -94,28 +94,33 @@ Any other number of arguments prints the usage message and exits with code 1.
 
 ### Makefile targets
 
-| Target         | What it does                                                        |
-|----------------|---------------------------------------------------------------------|
-| `make install` | Installs `flake8` and `mypy`.                                       |
-| `make run`     | Runs `python3 a_maze_ing.py config.txt`.                            |
-| `make debug`   | Runs the program under `pdb`.                                       |
-| `make clean`   | Removes `.mypy_cache` and all `__pycache__` directories.            |
-| `make lint`    | Runs `flake8 .` and `mypy .` with the flags required by the subject.|
+| Target         | What it does                                                                 |
+|----------------|------------------------------------------------------------------------------|
+| `make install` | Installs `flake8`, `mypy` and `build`.                                       |
+| `make run`     | Runs `python3 a_maze_ing.py config.txt`.                                     |
+| `make debug`   | Runs the program under `pdb`.                                                |
+| `make build`   | Builds the `mazegen` package (`.tar.gz` and `.whl`) into `dist/`.            |
+| `make clean`   | Removes `.mypy_cache`, `.pytest_cache` and all `__pycache__` directories.    |
+| `make fclean`  | Runs `clean`, then removes `build/`, `dist/`, `*.egg-info` and `maze.txt`.   |
+| `make lint`    | Runs `flake8 .` and `mypy .` with the flags required by the subject.         |
 
 ### Building the `mazegen` package from source
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
-pip install build
-python3 -m build            # creates dist/mazegen-1.0.0-py3-none-any.whl
-                            # and dist/mazegen-1.0.0.tar.gz
-cp dist/mazegen-1.0.0-py3-none-any.whl .   # copy to the repo root
+make install                      # installs flake8, mypy and build
+make build                        # creates dist/mazegen-1.0.0.tar.gz
+                                  # and dist/mazegen-1.0.0-py3-none-any.whl
+cp dist/mazegen-1.0.0* .          # copy both files to the repository root
 ```
 
-Installing the built package:
+Both files are committed at the root of the repository. The package can be
+installed from either of them:
 
 ```bash
 pip install mazegen-1.0.0-py3-none-any.whl
+# or
+pip install mazegen-1.0.0.tar.gz
 ```
 
 ### Error handling
@@ -407,6 +412,7 @@ The same `seed` with the same parameters always produces the same maze.
 ├── Makefile                        # install / run / debug / clean / lint
 ├── pyproject.toml                  # build configuration of the mazegen package
 ├── mazegen-1.0.0-py3-none-any.whl  # built reusable package
+├── mazegen-1.0.0.tar.gz            # source distribution of the package
 ├── LICENSE.md                      # MIT license
 ├── README.md
 ├── .gitignore
