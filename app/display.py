@@ -25,6 +25,15 @@ PATTERN_THEMES: list[tuple[str, str]] = [
     ("Vibrant Violet", "\033[48;5;93m"),
 ]
 
+# Wall colour themes (bold foreground, 256-color ANSI codes)
+WALL_THEMES: list[tuple[str, str]] = [
+    ("White", "\033[1;97m"),
+    ("Black", "\033[1;30m"),
+    ("Navy", "\033[1;38;5;18m"),
+    ("Purple", "\033[1;38;5;54m"),
+    ("Dark Red", "\033[1;38;5;88m"),
+]
+
 # Fixed styles for entry, exit, and neon pink continuous path
 STYLE_ENTRY: str = "\033[1;97;48;5;28m"
 STYLE_EXIT: str = "\033[1;97;48;5;160m"
@@ -98,17 +107,18 @@ def get_bg_code(x: int, y: int, palette: list[int]) -> str:
     return f"\033[48;5;{color_id}m"
 
 
-def paint_wall(char: str, bg_code: str) -> str:
-    """Render a white wall character over the given pastel background.
+def paint_wall(char: str, bg_code: str, wall_color: str = WALL_COLOR) -> str:
+    """Render a wall character over the given pastel background.
 
     Args:
         char: Box Drawing wall or corner character to render.
         bg_code: ANSI escape sequence for the cell's background color.
+        wall_color: ANSI escape sequence for the wall's foreground color.
 
     Returns:
         Formatted string containing the colored character and reset sequence.
     """
-    return f"{WALL_COLOR}{bg_code}{char}{RESET}"
+    return f"{wall_color}{bg_code}{char}{RESET}"
 
 
 def get_corner(maze: MazeGenerator, vx: int, vy: int) -> str:
@@ -166,6 +176,7 @@ def render_ascii(
     path_limit: int | None = None,
     old_palette: list[int] | None = None,
     split_y: int = 0,
+    wall_color: str = WALL_COLOR,
 ) -> None:
     """Render the maze in ASCII with theme transitions and path animation.
 
@@ -181,10 +192,14 @@ def render_ascii(
         path_limit: Optional number of path steps to render during animation.
         old_palette: Previous background palette used during wipe transitions.
         split_y: Row index separating the new palette from the old palette.
+        wall_color: ANSI escape sequence for the walls' color.
 
     Returns:
         None. Outputs the rendered maze directly to standard output.
     """
+    def paint(char: str, bg_code: str) -> str:
+        return paint_wall(char, bg_code, wall_color)
+
     needed_cols: int = maze.width * 3 + 1
     term_cols: int = shutil.get_terminal_size().columns
     if term_cols < needed_cols:
@@ -216,12 +231,12 @@ def render_ascii(
         old_palette if (old_palette is not None and split_y == 0) else palette
     )
     top_bg: str = get_bg_code(0, 0, active_top)
-    top_line: str = paint_wall(get_corner(maze, 0, 0), top_bg)
+    top_line: str = paint(get_corner(maze, 0, 0), top_bg)
     for x in range(maze.width):
         bg: str = get_bg_code(x, 0, active_top)
         horiz: str = "━━" if (maze.grid[0][x] & NORTH) else "  "
         corner: str = get_corner(maze, x + 1, 0)
-        top_line += paint_wall(horiz, bg) + paint_wall(corner, bg)
+        top_line += paint(horiz, bg) + paint(corner, bg)
     lines.append(top_line)
 
     # 2. Cell rows
@@ -233,8 +248,8 @@ def render_ascii(
 
         left_bg: str = get_bg_code(0, y, row_palette)
         left_char: str = "┃" if (maze.grid[y][0] & WEST) else " "
-        row_mid: str = paint_wall(left_char, left_bg)
-        row_bot: str = paint_wall(get_corner(maze, 0, y + 1), left_bg)
+        row_mid: str = paint(left_char, left_bg)
+        row_bot: str = paint(get_corner(maze, 0, y + 1), left_bg)
 
         for x in range(maze.width):
             cell: int = maze.grid[y][x]
@@ -261,7 +276,7 @@ def render_ascii(
                 east_part = f"{STYLE_PATH} {RESET}"
             else:
                 east_char: str = "┃" if (cell & EAST) else " "
-                east_part = paint_wall(east_char, bg)
+                east_part = paint(east_char, bg)
 
             # South wall / passage (merge adjacent "42" or open path cells)
             if is_42 and (x, y + 1) in pattern_42:
@@ -270,7 +285,7 @@ def render_ascii(
                 south_part = f"{STYLE_PATH}  {RESET}"
             else:
                 south_char: str = "━━" if (cell & SOUTH) else "  "
-                south_part = paint_wall(south_char, bg)
+                south_part = paint(south_char, bg)
 
             # Bottom-right corner
             if (
@@ -282,7 +297,7 @@ def render_ascii(
                 corner_part: str = f"{pattern_style} {RESET}"
             else:
                 corner_char: str = get_corner(maze, x + 1, y + 1)
-                corner_part = paint_wall(corner_char, bg)
+                corner_part = paint(corner_char, bg)
 
             row_mid += body + east_part
             row_bot += south_part + corner_part
@@ -315,13 +330,14 @@ def run_interactive_ui(
     show_path: bool = True
     bg_idx: int = 0
     pat_idx: int = 0
+    wall_idx: int = 0
 
     pattern_42: set[Coord] = maze._get_42()
     warning: str = ""
     if not pattern_42:
         warning = (
-            "Error: maze too small for the '42' pattern."
-            "You need at least 9x7."
+            "Error: maze too small for the '42' pattern "
+            "(need at least 9x7)."
         )
     path_str: str = maze.solve(entry, exit_pos)
     solution_coords: list[Coord] = get_solution_coords(entry, path_str)
@@ -331,6 +347,7 @@ def run_interactive_ui(
     while True:
         bg_name, palette = BG_THEMES[bg_idx]
         pat_name, pat_style = PATTERN_THEMES[pat_idx]
+        wall_name, wall_style = WALL_THEMES[wall_idx]
 
         render_ascii(
             maze,
@@ -341,25 +358,26 @@ def run_interactive_ui(
             palette=palette,
             pattern_style=pat_style,
             show_path=show_path,
+            wall_color=wall_style,
         )
 
-        if warning:
-            print(warning)
         print("\n=== A-Maze-ing ===")
         print("1. Re-generate a new maze")
-        print(f"2. Show/Hide shortest path ({'ON' if show_path else 'OFF'}) ")
-        print(f"3. Change pastel background ({bg_name})   ")
-        print(f"4. Change '42' pattern style ({pat_name})   ")
-        print("5. Quit")
+        print(f"2. Show/Hide shortest path ({'ON' if show_path else 'OFF'})  ")
+        print(f"3. Change wall colour ({wall_name})          ")
+        print(f"4. Change pastel background ({bg_name})          ")
+        print(f"5. Change '42' pattern style ({pat_name})          ")
+        print("6. Quit")
+        if warning:
+            print(warning)
 
         try:
-            choice: str = input("Choice? (1-5): ").strip()
+            choice: str = input("Choice? (1-6): ").strip()
         except (KeyboardInterrupt, EOFError):
             print("\nExiting...")
             break
 
         if choice == "1":
-            # Reset grid walls to 15 before generating a fresh maze
             maze.grid = [
                 [15 for _ in range(maze.width)] for _ in range(maze.height)
             ]
@@ -375,7 +393,6 @@ def run_interactive_ui(
         elif choice == "2":
             show_path = not show_path
             if show_path:
-                # Animate shortest path step by step from EN to EX
                 for step in range(1, len(solution_coords) + 1):
                     render_ascii(
                         maze,
@@ -387,14 +404,16 @@ def run_interactive_ui(
                         pattern_style=pat_style,
                         show_path=True,
                         path_limit=step,
+                        wall_color=wall_style,
                     )
                     time.sleep(0.015)
         elif choice == "3":
+            wall_idx = (wall_idx + 1) % len(WALL_THEMES)
+        elif choice == "4":
             _, old_palette = BG_THEMES[bg_idx]
             bg_idx = (bg_idx + 1) % len(BG_THEMES)
             _, new_palette = BG_THEMES[bg_idx]
 
-            # Smoothly wipe the old background palette with the new one
             for step in range(1, maze.height + 1):
                 render_ascii(
                     maze,
@@ -407,10 +426,11 @@ def run_interactive_ui(
                     show_path=show_path,
                     old_palette=old_palette,
                     split_y=step,
+                    wall_color=wall_style,
                 )
                 time.sleep(0.02)
-        elif choice == "4":
-            pat_idx = (pat_idx + 1) % len(PATTERN_THEMES)
         elif choice == "5":
+            pat_idx = (pat_idx + 1) % len(PATTERN_THEMES)
+        elif choice == "6":
             print("Bye!")
             break
