@@ -365,6 +365,7 @@ def run_interactive_ui(
             ]
             maze.generate(
                 start=entry,
+                exit_pos=exit_pos,
                 seed=random.randint(0, 999999),
                 perfect=perfect,
             )
